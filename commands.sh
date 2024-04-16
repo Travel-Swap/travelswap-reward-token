@@ -1,7 +1,5 @@
 sui move build
 
-sui client publish .\\sources\\travelswap_reward_token.move --gas-budget 20000000
+sui client publish ./sources/travelswap_reward_token.move --gas-budget 20000000
 
-sui client call --function mint --module travelswap_reward_token --package 0x6fd3cc49345e4b55c7b28fcf5ca828f75e4f0f2a5268f8bf339ed50dcb7b397f --args 0xdf3b23e9c6efd213e1362bb204f6ee3b0c4d5298d020bc3f273969e075c894cd 0x5d5baf2a10f14f14e31b33ad25f53b08b717c4206ae5fbaa154d1ad9f6dd754f --gas-budget 10000000
-
-move fmt .
+sui client call --function mint --module travl_rt --package 0x3cda8223ac0b27b5711d3a402758668689497f4d9c5561d62b5bd0a6fabbd656 --gas-budget 10000000 --args "0x4dba046038735b57f626d0ce9b07e0731e2d824a7e4be7f470bf799668fc34e8" 10000000 "0xfe9c062121f4fc3c1d7b543a36eff8139e35cbe6dd603e89593e72c98840810b"
