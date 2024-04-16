@@ -1,23 +1,12 @@
 #[test_only]
 module travelswap_reward_token::travl_rt_test {
-
-    use sui::sui::SUI;
-    use sui::coin::{Self, TreasuryCap};
+    use sui::coin::{TreasuryCap};
     use sui::token_test_utils::{Self as test};
     use sui::token::{Self, Token};
-    use sui::test_scenario::{Self, Scenario};
+    use sui::test_scenario::{Self};
     use travelswap_reward_token::travl_rt::{Self as travl_rt, TRAVL_RT};
 
     const EWrongUserBalance: u64 = 1;
-
-    /// Used to initialize the user and house balances.
-    public fun fund_addresses(scenario: &mut Scenario, admin: address, user: address, admin_funds: u64, user_funds: u64) {
-        let ctx = test_scenario::ctx(scenario);
-        let coinA = coin::mint_for_testing<SUI>(admin_funds, ctx);
-        let coinB = coin::mint_for_testing<SUI>(user_funds, ctx);
-        transfer::public_transfer(coinA, admin);
-        transfer::public_transfer(coinB, user);
-    }
 
     #[test]
     fun test_mint_and_burn_tokens_to_user() {
