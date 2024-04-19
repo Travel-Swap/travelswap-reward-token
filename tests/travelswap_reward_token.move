@@ -72,7 +72,7 @@ module travelswap_reward_token::travl_rt_test {
         // Mint some tokens to user
         test_scenario::next_tx(scenario, admin);
         let mut treasury_cap = test_scenario::take_from_sender<TreasuryCap<TRAVL_RT>>(scenario);
-        travl_rt::mintBatch(&mut treasury_cap, &amounts, &recipients, ctx);
+        travl_rt::mint_batch(&mut treasury_cap, &amounts, &recipients, ctx);
         test_scenario::return_to_sender(scenario,  treasury_cap);
         
 

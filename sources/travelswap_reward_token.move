@@ -72,7 +72,7 @@ module travelswap_reward_token::travl_rt {
     }
 
     // mintBatch to multiple recipients, this will be used to distribute the initial set of RT's
-    public fun mintBatch(
+    public fun mint_batch(
         cap: &mut TreasuryCap<TRAVL_RT>,
         amounts: &vector<u64>,
         recipients: &vector<address>,
