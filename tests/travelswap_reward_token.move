@@ -2,7 +2,7 @@
 module travelswap_reward_token::travl_rt_test {
     use sui::coin::{TreasuryCap};
     use sui::token_test_utils::{Self as test};
-    use sui::token::{Self, Token};
+    use sui::token::{Self, Token, TokenPolicy};
     use sui::test_scenario::{Self};
     use travelswap_reward_token::travl_rt::{Self as travl_rt, TRAVL_RT};
 
@@ -24,6 +24,7 @@ module travelswap_reward_token::travl_rt_test {
         test_scenario::next_tx(scenario, admin);
         let mut treasury_cap = test_scenario::take_from_sender<TreasuryCap<TRAVL_RT>>(scenario);
         travl_rt::mint(&mut treasury_cap, 1000_000000, user, ctx);
+        test_scenario::return_to_sender(scenario, treasury_cap);
         
         // Validate the user balance
         test_scenario::next_tx(scenario, user);
@@ -33,14 +34,16 @@ module travelswap_reward_token::travl_rt_test {
             test_scenario::return_to_sender(scenario, user_token);
         };
 
-        // Burn some tokens from user
-        test_scenario::next_tx(scenario, admin);
+        // User spends tokens
+        test_scenario::next_tx(scenario, user);
         {
-            let mut user_token = test_scenario::take_from_address<Token<TRAVL_RT>>(scenario, user);
-            let burn_token = token::split(&mut user_token, 400_000000, ctx);
-            travl_rt::spend(&mut treasury_cap, burn_token, 400_000000, user, ctx);
-            test_scenario::return_to_sender(scenario,  treasury_cap);
+            let mut user_token = test_scenario::take_from_sender<Token<TRAVL_RT>>(scenario);
+            let mut policy = test_scenario::take_shared<TokenPolicy<TRAVL_RT>>(scenario);
+            let spending_token = token::split(&mut user_token, 400_000000, ctx);
+            travl_rt::spend(&mut policy, spending_token, user, ctx);
+
             test_scenario::return_to_address(user, user_token);
+            test_scenario::return_shared(policy);
         };
 
         // Validate the user balance
@@ -73,8 +76,7 @@ module travelswap_reward_token::travl_rt_test {
         test_scenario::next_tx(scenario, admin);
         let mut treasury_cap = test_scenario::take_from_sender<TreasuryCap<TRAVL_RT>>(scenario);
         travl_rt::mint_batch(&mut treasury_cap, &amounts, &recipients, ctx);
-        test_scenario::return_to_sender(scenario,  treasury_cap);
-        
+        test_scenario::return_to_sender(scenario, treasury_cap);    
 
         // Validate the users balances
         let max = amounts.length();

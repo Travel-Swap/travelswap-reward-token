@@ -4,12 +4,11 @@ module travelswap_reward_token::travl_rt {
     // Imports
     use sui::coin::{Self, TreasuryCap};
     use sui::event;
-    use sui::token::{Self, Token};
+    use sui::token::{Self, Token, TokenPolicy};
 
     // Errors
     
     // Token amount does not match the spend `amount`.
-    const EIncorrectAmount: u64 = 0;
     const EIncorrectLength: u64 = 1;
 
     // Structs
@@ -20,7 +19,7 @@ module travelswap_reward_token::travl_rt {
         recipient: address,
     }
 
-    public struct BurnEvent has copy, drop {
+    public struct SpentEvent has copy, drop {
         amount: u64,
         spender: address,
     }   
@@ -28,23 +27,17 @@ module travelswap_reward_token::travl_rt {
     // Token
     public struct TRAVL_RT has drop {}
 
+    // Rules
+    public struct Rule has drop {}
+
     /* 
         Initializer is called once on module publish. A treasury
         cap is sent to the publisher, who then controls minting and burning
     */ 
     fun init(otw: TRAVL_RT, ctx: &mut TxContext) {
-        let treasury = create_currency(otw, ctx);
-
-        transfer::public_transfer(treasury, tx_context::sender(ctx))
-    }
-
-    fun create_currency<T: drop>(
-        otw: T,
-        ctx: &mut TxContext
-    ): TreasuryCap<T> {
         let (treasury_cap, metadata) = coin::create_currency(
             otw, 
-            6, 
+            0, 
             b"TRAVL_RT", 
             b"Travelswap Reward Token", 
             b"Reward tokens issued for participating in the TravelSwap ecosystem", 
@@ -52,12 +45,22 @@ module travelswap_reward_token::travl_rt {
             ctx
         );
 
-        transfer::public_freeze_object(metadata);
-        treasury_cap
+        let (mut policy, policy_cap) = token::new_policy(&treasury_cap, ctx);
+        token::add_rule_for_action<TRAVL_RT, Rule>(
+            &mut policy,
+            &policy_cap,
+            token::spend_action(),
+            ctx
+        );
+        token::share_policy(policy);
+
+        // transfer::public_freeze_object(metadata);
+        transfer::public_transfer(metadata, tx_context::sender(ctx));
+        transfer::public_transfer(policy_cap, tx_context::sender(ctx));
+        transfer::public_transfer(treasury_cap, tx_context::sender(ctx));
     }
 
     // Public functions
-
     public fun mint(
         cap: &mut TreasuryCap<TRAVL_RT>, 
         amount: u64,
@@ -83,23 +86,24 @@ module travelswap_reward_token::travl_rt {
 
         let mut i: u64 = 0;
         while (i < max) {
-            mint(cap, *std::vector::borrow(amounts, i), *std::vector::borrow(recipients, i), ctx);
+            mint(cap, amounts[i], recipients[i], ctx);
             i = i + 1;
         }
     }
 
     public fun spend(
-        cap: &mut TreasuryCap<TRAVL_RT>, 
-        token: Token<TRAVL_RT>,
-        amount: u64,
+        policy: &mut TokenPolicy<TRAVL_RT>,
+        spentToken: Token<TRAVL_RT>,
         spender: address,
         ctx: &mut TxContext
     ) {
-        assert!(token::value(&token) == amount, EIncorrectAmount);
-        let req = token::spend(token, ctx);
+        let amount = token::value<TRAVL_RT>(&spentToken);
+        let mut action_request = token::spend<TRAVL_RT>(spentToken, ctx);
 
-        token::confirm_with_treasury_cap(cap, req, ctx);
-        event::emit(BurnEvent { amount, spender });
+        token::add_approval( Rule {}, &mut action_request, ctx);
+
+        token::confirm_request_mut(policy, action_request, ctx);
+        event::emit(SpentEvent { amount, spender });
     }
 
     #[test_only]
